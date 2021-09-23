@@ -1,3 +1,4 @@
 {
-  "blockproperties.config.screen.main": "Block Properties Config"
+  "blockproperties.config.screen.main": "Block Properties Config",
+  "blockproperties.config.screen.block_list.no_results": "No entries found matching \"$1\" :("
 }

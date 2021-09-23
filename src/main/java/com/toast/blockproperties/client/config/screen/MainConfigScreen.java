@@ -1,6 +1,7 @@
 package com.toast.blockproperties.client.config.screen;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
+import com.toast.blockproperties.common.core.BlockProperties;
 import com.toast.blockproperties.common.misc.TranslationStrings;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
@@ -18,6 +19,11 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * The main config screen for Block Properties.
+ * Displays a list of all installed mods that
+ * adds blocks to the game.
+ */
 public class MainConfigScreen extends Screen {
 
     /** The previous screen, usually the Forge main config screen. */
@@ -56,7 +62,7 @@ public class MainConfigScreen extends Screen {
     @Override
     public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         this.renderBackground(matrixStack);
-        this.modList.render(matrixStack, mouseX, mouseX, partialTicks);
+        this.modList.render(matrixStack, mouseX, mouseY, partialTicks);
 
         drawCenteredString(matrixStack, this.font, this.title, this.width / 2, 10, -1);
 
@@ -134,9 +140,9 @@ public class MainConfigScreen extends Screen {
             }
 
             @Override
-            public void render(MatrixStack matrixStack, int p_230432_2_, int p_230432_3_, int p_230432_4_, int p_230432_5_, int p_230432_6_, int p_230432_7_, int p_230432_8_, boolean p_230432_9_, float p_230432_10_) {
-                String s = this.modName;
-                MainConfigScreen.this.font.drawShadow(matrixStack, s, (float)(MainConfigScreen.ModEntryList.this.width / 2 - MainConfigScreen.this.font.width(s) / 2), (float)(p_230432_3_ + 1), 16777215, true);
+            public void render(MatrixStack matrixStack, int p_230432_2_, int p_230432_3_, int p_230432_4_, int p_230432_5_, int p_230432_6_, int mouseX, int mouseY, boolean isMouseOver, float p_230432_10_) {
+                int color = isMouseOver ? 16777045 : 16777215;
+                MainConfigScreen.this.font.drawShadow(matrixStack, this.modName, (float)(MainConfigScreen.ModEntryList.this.width / 2 - MainConfigScreen.this.font.width(this.modName) / 2), (float)(p_230432_3_ + 1), color, true);
             }
 
             public String getModid() {
@@ -147,9 +153,9 @@ public class MainConfigScreen extends Screen {
                 return this.modName;
             }
 
-            @Override
-            public boolean mouseClicked(double p_231044_1_, double p_231044_3_, int p_231044_5_) {
-                if (p_231044_5_ == 0) {
+            @Override                  // Parameter mappings would be nice
+            public boolean mouseClicked(double what, double are, int these) {
+                if (these == 0) {
                     this.openCategory();
                     return true;
                 }
