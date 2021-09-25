@@ -1,6 +1,6 @@
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
-package com.toast.blockproperties.client.config.screen;
+package com.toast.blockproperties.client.screen.config;
 
 import mcp.MethodsReturnNonnullByDefault;
 

@@ -1,12 +1,12 @@
-package com.toast.blockproperties.client.config.screen;
+package com.toast.blockproperties.client.screen.config;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
-import com.toast.blockproperties.common.core.BlockProperties;
 import com.toast.blockproperties.common.misc.TranslationStrings;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.SimpleSound;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.client.gui.widget.button.Button;
 import net.minecraft.client.gui.widget.list.ExtendedList;
 import net.minecraft.util.SoundEvents;
@@ -14,10 +14,11 @@ import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
 import net.minecraftforge.registries.ForgeRegistries;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
+import java.text.Collator;
+import java.util.*;
 
 /**
  * The main config screen for Block Properties.
@@ -29,19 +30,58 @@ public class MainConfigScreen extends Screen {
     /** The previous screen, usually the Forge main config screen. */
     private final Screen parent;
 
-    /** A scrollable list of installed mods. */
+    /** A text field for searching for a specific mod*/
+    private TextFieldWidget searchField;
+
+    /**
+     * The last search String that was typed into
+     * the search text field. Stored for GUI
+     * re-initialization when the game window
+     * is resized and whatnot.
+     */
+    private String lastSearch = "";
+
+    /** A map of modids and their respective display name. */
+    private final Map<String, String> modEntries = new TreeMap<>(Collator.getInstance());
+
+    /** A scrollable list showing installed mods. */
     private ModEntryList modList;
 
 
     public MainConfigScreen(Minecraft minecraft, Screen parent) {
         super(new TranslationTextComponent(TranslationStrings.MAIN_SCREEN_TITLE));
         this.parent = parent;
+
+        List<String> modids = new ArrayList<>();
+
+        for (Block block : ForgeRegistries.BLOCKS.getValues()) {
+            String namespace = block.getRegistryName().getNamespace();
+
+            if (!modids.contains(namespace)) {
+                modids.add(namespace);
+            }
+        }
+
+        for(ModInfo modInfo : ModList.get().getMods()) {
+            if (modids.contains(modInfo.getModId())) {
+                this.modEntries.put(modInfo.getDisplayName(), modInfo.getModId());
+            }
+        }
     }
 
     @Override
     public void init() {
+        this.searchField = new TextFieldWidget(this.minecraft.font, (this.width / 2) - 40, 18, 80, 14, new TranslationTextComponent("itemGroup.search"));
+        this.searchField.setMaxLength(50);
+        this.searchField.setBordered(true);
+        this.searchField.setVisible(true);
+        this.searchField.setTextColor(16777215);
+        this.searchField.setValue(this.lastSearch.isEmpty() ? "" : this.lastSearch);
+        this.children.add(this.searchField);
+
         this.modList = new ModEntryList(this.minecraft);
         this.children.add(this.modList);
+        this.modList.sortForSearch(this.lastSearch);
 
         // Done button
         this.addButton(new Button(this.width / 2 - 75, this.height - this.height / 8, 70, 20, new TranslationTextComponent("gui.done"), (button) -> {
@@ -60,11 +100,22 @@ public class MainConfigScreen extends Screen {
     }
 
     @Override
+    public void tick() {
+        this.searchField.tick();
+
+        String searchString = this.searchField.getValue();
+
+        if (!searchString.equalsIgnoreCase(this.lastSearch)) {
+            this.modList.sortForSearch(searchString);
+        }
+        this.lastSearch = searchString;
+    }
+
+    @Override
     public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         this.renderBackground(matrixStack);
         this.modList.render(matrixStack, mouseX, mouseY, partialTicks);
-
-        drawCenteredString(matrixStack, this.font, this.title, this.width / 2, 10, -1);
+        this.searchField.render(matrixStack, mouseX, mouseY, partialTicks);
 
         super.render(matrixStack, mouseX, mouseY, partialTicks);
     }
@@ -72,23 +123,41 @@ public class MainConfigScreen extends Screen {
     public class ModEntryList extends ExtendedList<MainConfigScreen.ModEntryList.ModEntry> {
 
         public ModEntryList(Minecraft minecraft) {
-            super(minecraft, MainConfigScreen.this.width, MainConfigScreen.this.height, 40, MainConfigScreen.this.height - 45, 18);
+            super(minecraft, MainConfigScreen.this.width, MainConfigScreen.this.height, 45, MainConfigScreen.this.height - 43, 18);
 
-            List<String> includedMods = new ArrayList<>();
+            MainConfigScreen.this.modEntries.forEach((String displayName, String modid) -> {
+                this.addEntry(new ModEntry(displayName, modid));
+            });
+        }
 
-            for (Block block : ForgeRegistries.BLOCKS.getValues()) {
-                String namespace = block.getRegistryName().getNamespace();
+        /**
+         * Looks for all mod names that partially or exactly matches
+         * the text in the search box and sorts the content.
+         */
+        public void sortForSearch(String searchText) {
+            this.clearEntries();
+            this.setScrollAmount(0.0D);
 
-                if (!includedMods.contains(namespace))
-                    includedMods.add(namespace);
+            if (searchText.isEmpty()) {
+                MainConfigScreen.this.modEntries.forEach((String displayName, String modid) -> {
+                    this.addEntry(new ModEntry(displayName, modid));
+                });
             }
+            else {
+                MainConfigScreen.this.modEntries.forEach((String displayName, String modid) -> {
 
-            for(ModInfo modInfo : ModList.get().getMods()) {
-                if (includedMods.contains(modInfo.getModId())) {
-                    MainConfigScreen.ModEntryList.ModEntry modEntry = new MainConfigScreen.ModEntryList.ModEntry(modInfo.getDisplayName(), modInfo.getModId());
-                    this.addEntry(modEntry);
-                }
+                    if (StringUtils.containsIgnoreCase(displayName, searchText)) {
+                        this.addEntry(new ModEntry(displayName, modid));
+                    }
+                });
             }
+            this.updateTextColor();
+        }
+
+        private void updateTextColor() {
+            // Red       Gray
+            int textColor = this.children().isEmpty() ? 16733525 : 16777215;
+            MainConfigScreen.this.searchField.setTextColor(textColor);
         }
 
         /**

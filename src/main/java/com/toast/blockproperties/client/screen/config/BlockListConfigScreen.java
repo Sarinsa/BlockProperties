@@ -1,4 +1,4 @@
-package com.toast.blockproperties.client.config.screen;
+package com.toast.blockproperties.client.screen.config;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.toast.blockproperties.common.core.BlockProperties;
@@ -77,7 +77,7 @@ public class BlockListConfigScreen extends Screen {
 
     @Override
     public void init() {
-        this.searchField = new TextFieldWidget(this.minecraft.font, (this.width / 2) - 40, 13, 80, 14, new TranslationTextComponent("itemGroup.search"));
+        this.searchField = new TextFieldWidget(this.minecraft.font, (this.width / 2) - 40, 18, 80, 14, new TranslationTextComponent("itemGroup.search"));
         this.searchField.setMaxLength(50);
         this.searchField.setBordered(true);
         this.searchField.setVisible(true);
@@ -98,7 +98,7 @@ public class BlockListConfigScreen extends Screen {
             this.minecraft.setScreen(this.parent);
         }));
 
-        this.addButton(new ImageButton((this.width / 2) - 70, 10, 20, 20, 0, 0, 20, SEARCH_ICON, 32, 64, (button) -> {
+        this.addButton(new ImageButton((this.width / 2) - 70, 15, 20, 20, 0, 0, 20, SEARCH_ICON, 32, 64, (button) -> {
             this.blockEntryList.sortForSearch(this.searchField.getValue());
         }));
     }
@@ -123,13 +123,15 @@ public class BlockListConfigScreen extends Screen {
     @Override
     public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         this.renderBackground(matrixStack);
-        drawCenteredString(matrixStack, this.font, this.modName, this.width / 2, 5, -1);
 
         this.blockEntryList.render(matrixStack, mouseX, mouseX, partialTicks);
         this.searchField.render(matrixStack, mouseX, mouseY, partialTicks);
 
+        drawCenteredString(matrixStack, this.font, this.modName, this.width / 2, 5, -1);
+
         super.render(matrixStack, mouseX, mouseY, partialTicks);
     }
+
 
     /**
      * Opens the block config for the specified block.
@@ -137,14 +139,14 @@ public class BlockListConfigScreen extends Screen {
      * @param entry The block entry selected from the
      *              block entry list.
      */
-    public void openBlockConfig(BlockListConfigScreen.BlockEntryList.BlockEntry entry) {
+    public void openBlockConfig(BlockConfigEntry entry) {
         this.minecraft.setScreen(new BlockConfigScreen(this, entry));
     }
 
-    public class BlockEntryList extends ExtendedList<BlockListConfigScreen.BlockEntryList.BlockEntry> {
+    public class BlockEntryList extends ExtendedList<BlockConfigEntry> {
 
         public BlockEntryList(Minecraft minecraft) {
-            super(minecraft, BlockListConfigScreen.this.width, BlockListConfigScreen.this.height, 40, BlockListConfigScreen.this.height - 45, 18);
+            super(minecraft, BlockListConfigScreen.this.width, BlockListConfigScreen.this.height, 45, BlockListConfigScreen.this.height - 43, 18);
             this.sortForSearch(BlockListConfigScreen.this.searchField.getValue());
         }
 
@@ -158,7 +160,7 @@ public class BlockListConfigScreen extends Screen {
 
             if (searchText.isEmpty()) {
                 for (Block block : BlockListConfigScreen.this.modBlocks) {
-                    this.addEntry(new BlockEntry(block, this.translateBlockName(block)));
+                    this.addEntry(new BlockConfigEntry(block, this.translateBlockName(block), this, BlockListConfigScreen.this));
                 }
             }
             else {
@@ -166,7 +168,7 @@ public class BlockListConfigScreen extends Screen {
                     String displayName = translateBlockName(block);
 
                     if (StringUtils.containsIgnoreCase(displayName, searchText)) {
-                        this.addEntry(new BlockEntry(block, this.translateBlockName(block)));
+                        this.addEntry(new BlockConfigEntry(block, this.translateBlockName(block), this, BlockListConfigScreen.this));
                     }
                 }
             }
@@ -196,7 +198,7 @@ public class BlockListConfigScreen extends Screen {
         }
 
         @Override
-        public void setSelected(@Nullable BlockListConfigScreen.BlockEntryList.BlockEntry modEntry) {
+        public void setSelected(@Nullable BlockConfigEntry modEntry) {
             super.setSelected(modEntry);
         }
 
@@ -208,58 +210,6 @@ public class BlockListConfigScreen extends Screen {
         @Override
         protected boolean isFocused() {
             return BlockListConfigScreen.this.getFocused() == this;
-        }
-
-
-        public class BlockEntry extends ExtendedList.AbstractListEntry<BlockListConfigScreen.BlockEntryList.BlockEntry> {
-
-            private final ResourceLocation registryName;
-            private final String localizedName;
-            private final Block block;
-            private final ItemStack renderStack;
-
-            public BlockEntry(Block block, String localizedName) {
-                this.registryName = block.getRegistryName();
-                this.localizedName = localizedName;
-                this.block = block;
-
-                this.renderStack = new ItemStack(block.asItem());
-
-            }
-
-            @Override
-            public void render(MatrixStack matrixStack, int p_230432_2_, int p_230432_3_, int p_230432_4_, int p_230432_5_, int p_230432_6_, int mouseX, int mouseY, boolean isMouseOver, float p_230432_10_) {
-                BlockListConfigScreen.this.font.drawShadow(matrixStack, this.localizedName, BlockEntryList.this.getRowLeft() + 24, (p_230432_3_ + 3), 16777215, true);
-
-                Minecraft.getInstance().getItemRenderer().renderAndDecorateFakeItem(this.renderStack, BlockEntryList.this.getRowLeft(), (p_230432_3_ - 1));
-            }
-
-            public ResourceLocation getRegistryName() {
-                return this.registryName;
-            }
-
-            public String getDisplayName() {
-                return this.localizedName;
-            }
-
-            public Block getBlock() {
-                return this.block;
-            }
-
-            @Override
-            public boolean mouseClicked(double p_231044_1_, double p_231044_3_, int p_231044_5_) {
-                if (p_231044_5_ == 0) {
-                    this.select(this);
-                    return true;
-                }
-                else {
-                    return false;
-                }
-            }
-
-            private void select(BlockEntry entry) {
-                BlockListConfigScreen.this.openBlockConfig(entry);
-            }
         }
     }
 }

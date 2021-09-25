@@ -1,6 +1,6 @@
 package com.toast.blockproperties.client;
 
-import com.toast.blockproperties.client.config.screen.MainConfigScreen;
+import com.toast.blockproperties.client.screen.config.MainConfigScreen;
 import com.toast.blockproperties.common.core.BlockProperties;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -14,6 +14,8 @@ public class ClientRegister {
 
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
-        ModLoadingContext.get().registerExtensionPoint(ExtensionPoint.CONFIGGUIFACTORY, () -> (minecraft, screen) -> new MainConfigScreen(minecraft, screen));
+        ModLoadingContext.get().registerExtensionPoint(ExtensionPoint.CONFIGGUIFACTORY, () -> MainConfigScreen::new);
+
+        ClientUtil.collectFluidTextures();
     }
 }
